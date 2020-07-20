@@ -15,8 +15,8 @@ fn main() {
     for x in 0..1024 {
         for y in 0..512 {
             let pixel = img.get_pixel_mut(x, y);
-            let r = (255.999 * (y as f64 / 512 as f64)) as u8;
-            let g = (255.999 * ((1024 - x) as f64 / 1024 as f64)) as u8;
+            let r = (255.999 * (y as f64 / 512_f64)) as u8;
+            let g = (255.999 * ((1024 - x) as f64 / 1024_f64)) as u8;
             let b = (255.999 * 0.25) as u8;
             *pixel = image::Rgb([r, g, b]);
         }
