@@ -24,9 +24,9 @@ fn main() {
         }
         bar.inc(1);
     }
-    let mut a = 0 as i32;
-    let mut b = 0 as i32;
-    for x in 0..100 {
+    let mut a: i32;
+    let mut b: i32;
+    for _x in 0..100 {
         let mut rng1 = rand::thread_rng();
         a = rng1.gen();
         a %= 200;
