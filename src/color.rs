@@ -2,15 +2,26 @@ use crate::{
     hittable::{HitRecord, HitTable},
     ray::Ray,
     rtweekend::clamp,
-    vec3::Color,
+    vec3::{random_in_unit_sphere, Color},
 };
 use image::{Rgb, RgbImage};
 use std::f64::INFINITY;
 
-pub fn ray_color(r: &Ray, world: &dyn HitTable) -> Color {
+pub fn ray_color(r: &Ray, world: &dyn HitTable, depth: i64) -> Color {
     let mut rec = HitRecord::new();
+    if depth <= 0 {
+        return Color::zero();
+    }
     if world.hit(r, 0.0, INFINITY, &mut rec) {
-        return (rec.normal + Color::ones()) * 0.5;
+        let target = rec.p + rec.normal + random_in_unit_sphere();
+        return ray_color(
+            &Ray {
+                orig: rec.p,
+                dir: target - rec.p,
+            },
+            world,
+            depth - 1,
+        ) * 0.5;
     }
     let unit_dir = r.dir.unit();
     let t = (unit_dir.y + 1.0) * 0.5;

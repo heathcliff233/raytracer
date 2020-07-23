@@ -1,3 +1,4 @@
+use crate::rtweekend::random_double;
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -56,6 +57,28 @@ impl Vec3 {
             y: self.y / self.length(),
             z: self.z / self.length(),
         }
+    }
+}
+
+pub fn random_vec3(min: f64, max: f64) -> Vec3 {
+    Vec3 {
+        x: random_double(min, max),
+        y: random_double(min, max),
+        z: random_double(min, max),
+    }
+}
+
+pub fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let p = Vec3 {
+            x: random_double(-1.0, 1.0),
+            y: random_double(-1.0, 1.0),
+            z: random_double(-1.0, 1.0),
+        };
+        if p.squared_length() >= 1.0 {
+            continue;
+        }
+        return p;
     }
 }
 

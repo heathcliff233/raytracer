@@ -23,6 +23,7 @@ fn main() {
     let samples_per_pixel = 100;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
+    let max_depth = 50;
     // World
     let mut world = HitTableList::new();
     world.add(Box::new(Sphere {
@@ -52,7 +53,7 @@ fn main() {
                 let v = ((image_height - y) as f64 + random_double(0.0, 1.0))
                     / (image_height - 1) as f64;
                 let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world);
+                pixel_color += ray_color(&r, &world, max_depth);
             }
             write_color(&mut img, x, y, &pixel_color, samples_per_pixel);
         }
