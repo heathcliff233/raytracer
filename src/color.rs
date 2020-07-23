@@ -42,9 +42,9 @@ pub fn write_color(
 ) {
     let pixel = img.get_pixel_mut(x, y);
     let scale = 1.0 / samples_per_pixel as f64;
-    let r = pixel_color.x * scale;
-    let g = pixel_color.y * scale;
-    let b = pixel_color.z * scale;
+    let r = (pixel_color.x * scale).sqrt();
+    let g = (pixel_color.y * scale).sqrt();
+    let b = (pixel_color.z * scale).sqrt();
     *pixel = Rgb([
         (256.0 * clamp(r, 0.0, 0.999)) as u8,
         (256.0 * clamp(g, 0.0, 0.999)) as u8,
