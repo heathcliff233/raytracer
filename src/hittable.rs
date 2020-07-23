@@ -1,12 +1,18 @@
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
+}
+
+impl Default for HitRecord {
+    fn default() -> Self {
+        HitRecord::new()
+    }
 }
 
 impl HitRecord {
@@ -40,15 +46,6 @@ pub trait HitTable {
 pub struct Sphere {
     pub center: Point3,
     pub radius: f64,
-}
-
-impl Sphere {
-    pub fn new(c: Point3, r: f64) -> Self {
-        Self {
-            center: c,
-            radius: r,
-        }
-    }
 }
 
 impl HitTable for Sphere {
