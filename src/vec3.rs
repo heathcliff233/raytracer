@@ -210,6 +210,7 @@ impl Neg for Vec3 {
     }
 }
 
+#[allow(clippy::float_cmp)]
 #[cfg(test)]
 mod tests {
     use super::*;
