@@ -1,5 +1,8 @@
 use crate::rtweekend::random_double;
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::{
+    f64::consts::PI,
+    ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vec3 {
@@ -79,6 +82,17 @@ pub fn random_in_unit_sphere() -> Vec3 {
             continue;
         }
         return p;
+    }
+}
+
+pub fn random_unit_vector() -> Vec3 {
+    let a = random_double(0.0, 2.0 * PI);
+    let zz = random_double(-1.0, 1.0);
+    let r = (1.0 - zz * zz).sqrt();
+    Vec3 {
+        x: r * a.cos(),
+        y: r * a.sin(),
+        z: zz,
     }
 }
 
