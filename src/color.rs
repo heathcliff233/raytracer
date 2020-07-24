@@ -1,27 +1,33 @@
 use crate::{
     hittable::{HitRecord, HitTable},
+    material::Lambertian,
     ray::Ray,
     rtweekend::clamp,
-    vec3::{random_unit_vector, Color},
+    vec3::{Color, Vec3},
 };
 use image::{Rgb, RgbImage};
-use std::f64::INFINITY;
+use std::{f64::INFINITY, sync::Arc};
 
 pub fn ray_color(r: &Ray, world: &dyn HitTable, depth: i64) -> Color {
-    let mut rec = HitRecord::new();
+    let mut rec = HitRecord::new(Arc::new(Lambertian {
+        albedo: Color::zero(),
+    }));
     if depth <= 0 {
         return Color::zero();
     }
     if world.hit(r, 0.001, INFINITY, &mut rec) {
-        let target = rec.p + rec.normal + random_unit_vector();
-        return ray_color(
-            &Ray {
-                orig: rec.p,
-                dir: target - rec.p,
-            },
-            world,
-            depth - 1,
-        ) * 0.5;
+        let mut scattered = Ray {
+            orig: Vec3::ones(),
+            dir: Vec3::ones(),
+        };
+        let mut attenuation = Color::zero();
+        if rec
+            .mat_ptr
+            .scatter(r, &rec, &mut attenuation, &mut scattered)
+        {
+            return Vec3::elemul(attenuation, ray_color(&scattered, world, depth - 1));
+        }
+        return Color::zero();
     }
     let unit_dir = r.dir.unit();
     let t = (unit_dir.y + 1.0) * 0.5;

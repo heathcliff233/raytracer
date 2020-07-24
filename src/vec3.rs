@@ -74,6 +74,10 @@ pub fn random_unit_vector() -> Vec3 {
     }
 }
 
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    *v - *n * (*v * *n) * 2.0
+}
+
 impl Add for Vec3 {
     type Output = Self;
 

@@ -2,10 +2,10 @@ use crate::{
     hittable::{HitRecord, HitTable},
     ray::Ray,
 };
-use std::vec;
+use std::{sync::Arc, vec};
 
 pub struct HitTableList {
-    pub objects: vec::Vec<Box<dyn HitTable>>,
+    pub objects: vec::Vec<Arc<dyn HitTable>>,
 }
 
 impl HitTableList {
@@ -19,7 +19,7 @@ impl HitTableList {
         self.objects.clear();
     }*/
 
-    pub fn add(&mut self, object: Box<dyn HitTable>) {
+    pub fn add(&mut self, object: Arc<dyn HitTable>) {
         self.objects.push(object);
     }
 }

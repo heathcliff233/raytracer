@@ -1,22 +1,21 @@
 use crate::ray::Ray;
-use crate::vec3::{Point3, Vec3};
+use crate::{
+    material::Material,
+    vec3::{Point3, Vec3},
+};
+use std::sync::Arc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
+    pub mat_ptr: Arc<dyn Material>,
     pub t: f64,
     pub front_face: bool,
 }
 
-impl Default for HitRecord {
-    fn default() -> Self {
-        HitRecord::new()
-    }
-}
-
 impl HitRecord {
-    pub fn new() -> Self {
+    pub fn new(m: Arc<dyn Material>) -> Self {
         Self {
             p: Point3 {
                 x: 0.0,
@@ -24,6 +23,7 @@ impl HitRecord {
                 z: 0.0,
             },
             normal: Vec3::zero(),
+            mat_ptr: m,
             t: 0.0,
             front_face: false,
         }
@@ -42,10 +42,11 @@ pub trait HitTable {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone)]
 pub struct Sphere {
     pub center: Point3,
     pub radius: f64,
+    pub mat_ptr: Arc<dyn Material>,
 }
 
 impl HitTable for Sphere {
@@ -63,6 +64,7 @@ impl HitTable for Sphere {
                 rec.p = r.at(rec.t);
                 let outward_normal = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(r, &outward_normal);
+                rec.mat_ptr = self.mat_ptr.clone();
                 return true;
             }
             let tmp = (-b + root) / a;
@@ -71,6 +73,7 @@ impl HitTable for Sphere {
                 rec.p = r.at(rec.t);
                 let outward_normal = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(r, &outward_normal);
+                rec.mat_ptr = self.mat_ptr.clone();
                 return true;
             }
         }

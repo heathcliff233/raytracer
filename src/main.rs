@@ -3,6 +3,7 @@ mod camera;
 mod color;
 mod hittable;
 mod hittablelist;
+mod material;
 mod ray;
 mod rtweekend;
 mod vec3;
@@ -12,7 +13,9 @@ use hittable::Sphere;
 use hittablelist::HitTableList;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
+use material::{Lambertian, Metal};
 use rtweekend::random_double;
+use std::sync::Arc;
 use vec3::{Color, Point3};
 
 fn main() {
@@ -26,21 +29,69 @@ fn main() {
     let max_depth = 50;
     // World
     let mut world = HitTableList::new();
-    world.add(Box::new(Sphere {
-        center: Point3 {
-            x: 0.0,
-            y: 0.0,
-            z: -1.0,
+    let material_ground = Arc::new(Lambertian {
+        albedo: Color {
+            x: 0.8,
+            y: 0.8,
+            z: 0.0,
         },
-        radius: 0.5,
-    }));
-    world.add(Box::new(Sphere {
+    });
+    let material_center = Arc::new(Lambertian {
+        albedo: Color {
+            x: 0.7,
+            y: 0.3,
+            z: 0.3,
+        },
+    });
+    let material_left = Arc::new(Metal {
+        albedo: Color {
+            x: 0.8,
+            y: 0.8,
+            z: 0.8,
+        },
+    });
+    let material_right = Arc::new(Metal {
+        albedo: Color {
+            x: 0.8,
+            y: 0.6,
+            z: 0.2,
+        },
+    });
+    world.add(Arc::new(Sphere {
         center: Point3 {
             x: 0.0,
             y: -100.5,
             z: -1.0,
         },
         radius: 100.0,
+        mat_ptr: material_ground,
+    }));
+    world.add(Arc::new(Sphere {
+        center: Point3 {
+            x: 0.0,
+            y: 0.0,
+            z: -1.0,
+        },
+        radius: 0.5,
+        mat_ptr: material_center,
+    }));
+    world.add(Arc::new(Sphere {
+        center: Point3 {
+            x: -1.0,
+            y: 0.0,
+            z: -1.0,
+        },
+        radius: 0.5,
+        mat_ptr: material_left,
+    }));
+    world.add(Arc::new(Sphere {
+        center: Point3 {
+            x: 1.0,
+            y: 0.0,
+            z: -1.0,
+        },
+        radius: 0.5,
+        mat_ptr: material_right,
     }));
     // Camera
     let cam = Camera::new();
