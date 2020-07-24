@@ -63,28 +63,6 @@ impl Vec3 {
     }
 }
 
-pub fn random_vec3(min: f64, max: f64) -> Vec3 {
-    Vec3 {
-        x: random_double(min, max),
-        y: random_double(min, max),
-        z: random_double(min, max),
-    }
-}
-
-pub fn random_in_unit_sphere() -> Vec3 {
-    loop {
-        let p = Vec3 {
-            x: random_double(-1.0, 1.0),
-            y: random_double(-1.0, 1.0),
-            z: random_double(-1.0, 1.0),
-        };
-        if p.squared_length() >= 1.0 {
-            continue;
-        }
-        return p;
-    }
-}
-
 pub fn random_unit_vector() -> Vec3 {
     let a = random_double(0.0, 2.0 * PI);
     let zz = random_double(-1.0, 1.0);
@@ -93,15 +71,6 @@ pub fn random_unit_vector() -> Vec3 {
         x: r * a.cos(),
         y: r * a.sin(),
         z: zz,
-    }
-}
-
-pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
-    let in_unit_sphere = random_in_unit_sphere();
-    if in_unit_sphere * *normal > 0.0 {
-        return in_unit_sphere;
-    } else {
-        return -in_unit_sphere;
     }
 }
 
