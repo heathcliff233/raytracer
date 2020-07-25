@@ -1,5 +1,8 @@
 use crate::ray::Ray;
-use crate::vec3::{Point3, Vec3};
+use crate::{
+    rtweekend::degrees_to_radians,
+    vec3::{Point3, Vec3},
+};
 
 #[derive(Clone, Debug)]
 pub struct Camera {
@@ -10,52 +13,26 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new() -> Self {
-        let aspect_ratio = 16.0 / 9.0;
-        let viewport_height = 2.0;
+    pub fn new(lookfrom: Point3, lookat: Point3, vup: Vec3, vfov: f64, aspect_ratio: f64) -> Self {
+        let theta = degrees_to_radians(vfov);
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h;
         let viewport_width = aspect_ratio * viewport_height;
-        let focal_len = 1.0;
+        let w = (lookfrom - lookat).unit();
+        let u = vup.cross(w).unit();
+        let v = w.cross(u);
         Self {
-            origin: Point3::zero(),
-            horizontal: Vec3 {
-                x: viewport_width,
-                y: 0.0,
-                z: 0.0,
-            },
-            vertical: Vec3 {
-                x: 0.0,
-                y: viewport_height,
-                z: 0.0,
-            },
-            lower_left_corner: Point3::zero()
-                - Vec3 {
-                    x: viewport_width / 2.0,
-                    y: 0.0,
-                    z: 0.0,
-                }
-                - Vec3 {
-                    x: 0.0,
-                    y: viewport_height / 2.0,
-                    z: 0.0,
-                }
-                - Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: focal_len,
-                },
+            origin: lookfrom,
+            horizontal: u * viewport_width,
+            vertical: v * viewport_height,
+            lower_left_corner: lookfrom - u / 2.0 * viewport_width - v / 2.0 * viewport_height - w,
         }
     }
 
-    pub fn get_ray(&self, u: f64, v: f64) -> Ray {
+    pub fn get_ray(&self, s: f64, t: f64) -> Ray {
         Ray {
             orig: self.origin,
-            dir: self.lower_left_corner + self.horizontal * u + self.vertical * v - self.origin,
+            dir: self.lower_left_corner + self.horizontal * s + self.vertical * t - self.origin,
         }
-    }
-}
-
-impl Default for Camera {
-    fn default() -> Self {
-        Camera::new()
     }
 }

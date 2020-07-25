@@ -16,7 +16,7 @@ use indicatif::ProgressBar;
 use material::{Dielectric, Lambertian, Metal};
 use rtweekend::random_double;
 use std::sync::Arc;
-use vec3::{Color, Point3};
+use vec3::{Color, Point3, Vec3};
 
 fn main() {
     // image
@@ -98,7 +98,13 @@ fn main() {
         mat_ptr: material_right,
     }));
     // Camera
-    let cam = Camera::new();
+    let cam = Camera::new(
+        Point3::new(-2.0, 2.0, 1.0),
+        Point3::new(0.0, 0.0, -1.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        20.0,
+        aspect_ratio,
+    );
     // Main Loop
     for x in 0..image_width {
         for y in 0..image_height {
