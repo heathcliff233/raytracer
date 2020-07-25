@@ -63,6 +63,20 @@ impl Vec3 {
     }
 }
 
+pub fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let p = Vec3 {
+            x: random_double(-1.0, 1.0),
+            y: random_double(-1.0, 1.0),
+            z: random_double(-1.0, 1.0),
+        };
+        if p.squared_length() >= 1.0 {
+            continue;
+        }
+        return p;
+    }
+}
+
 pub fn random_unit_vector() -> Vec3 {
     let a = random_double(0.0, 2.0 * PI);
     let zz = random_double(-1.0, 1.0);
@@ -76,6 +90,13 @@ pub fn random_unit_vector() -> Vec3 {
 
 pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     *v - *n * (*v * *n) * 2.0
+}
+
+pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+    let cos_theta = -*uv * *n;
+    let r_out_perp = (*uv + *n * cos_theta) * etai_over_etat;
+    let r_out_parallel = -*n * (1.0 - r_out_perp.squared_length()).abs().sqrt();
+    r_out_perp + r_out_parallel
 }
 
 impl Add for Vec3 {

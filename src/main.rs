@@ -13,7 +13,7 @@ use hittable::Sphere;
 use hittablelist::HitTableList;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
-use material::{Lambertian, Metal};
+use material::{Dielectric, Lambertian, Metal};
 use rtweekend::random_double;
 use std::sync::Arc;
 use vec3::{Color, Point3};
@@ -38,25 +38,20 @@ fn main() {
     });
     let material_center = Arc::new(Lambertian {
         albedo: Color {
-            x: 0.7,
-            y: 0.3,
-            z: 0.3,
+            x: 0.1,
+            y: 0.2,
+            z: 0.5,
         },
     });
-    let material_left = Arc::new(Metal {
-        albedo: Color {
-            x: 0.8,
-            y: 0.8,
-            z: 0.8,
-        },
-    });
-    let material_right = Arc::new(Metal {
-        albedo: Color {
+    let material_left = Arc::new(Dielectric { ref_idx: 1.5 });
+    let material_right = Arc::new(Metal::new(
+        &Color {
             x: 0.8,
             y: 0.6,
             z: 0.2,
         },
-    });
+        0.0,
+    ));
     world.add(Arc::new(Sphere {
         center: Point3 {
             x: 0.0,
@@ -108,7 +103,7 @@ fn main() {
             }
             write_color(&mut img, x, y, &pixel_color, samples_per_pixel);
         }
-        bar.inc(1);
+        //bar.inc(1);
     }
     // Save
     img.save("output/test.png").unwrap();
