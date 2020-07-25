@@ -19,6 +19,12 @@ pub struct Lambertian {
     pub albedo: Color,
 }
 
+impl Lambertian {
+    pub fn new(a: Color) -> Self {
+        Self { albedo: a }
+    }
+}
+
 impl Material for Lambertian {
     fn scatter(
         &self,
@@ -77,6 +83,12 @@ impl Material for Metal {
 
 pub struct Dielectric {
     pub ref_idx: f64,
+}
+
+impl Dielectric {
+    pub fn new(r: f64) -> Self {
+        Self { ref_idx: r }
+    }
 }
 
 impl Material for Dielectric {

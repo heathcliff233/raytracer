@@ -16,93 +16,79 @@ use indicatif::ProgressBar;
 use material::{Dielectric, Lambertian, Metal};
 use rtweekend::random_double;
 use std::sync::Arc;
-use vec3::{Color, Point3, Vec3};
+use vec3::{randomvec, Color, Point3, Vec3};
+
+pub fn random_scene() -> HitTableList {
+    let mut world = HitTableList::new();
+    let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        ground_material,
+    )));
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = random_double(0.0, 1.0);
+            let center = Point3::new(
+                a as f64 + 0.9 * random_double(0.0, 1.0),
+                0.2,
+                b as f64 + 0.9 * random_double(0.0, 1.0),
+            );
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                if choose_mat < 0.8 {
+                    let albedo = randomvec().elemul(randomvec());
+                    let sphere_material = Arc::new(Lambertian::new(albedo));
+                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                } else if choose_mat < 0.95 {
+                    let albedo = randomvec().elemul(randomvec());
+                    let fuzz = random_double(0.0, 0.5);
+                    let sphere_material = Arc::new(Metal::new(&albedo, fuzz));
+                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                } else {
+                    let sphere_material = Arc::new(Dielectric::new(1.5));
+                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                }
+            }
+        }
+    }
+    let material_1 = Arc::new(Dielectric::new(1.5));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0),
+        1.0,
+        material_1,
+    )));
+    let material_2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(-4.0, 1.0, 0.0),
+        1.0,
+        material_2,
+    )));
+    let material_3 = Arc::new(Metal::new(&Color::new(0.7, 0.6, 0.5), 0.0));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(4.0, 1.0, 0.0),
+        1.0,
+        material_3,
+    )));
+    world
+}
 
 fn main() {
     // image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
+    let aspect_ratio = 3.0 / 2.0;
+    let image_width = 1200;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 500;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
     let max_depth = 50;
     // World
-    let mut world = HitTableList::new();
-    let material_ground = Arc::new(Lambertian {
-        albedo: Color {
-            x: 0.8,
-            y: 0.8,
-            z: 0.0,
-        },
-    });
-    let material_center = Arc::new(Lambertian {
-        albedo: Color {
-            x: 0.1,
-            y: 0.2,
-            z: 0.5,
-        },
-    });
-    let material_left = Arc::new(Dielectric { ref_idx: 1.5 });
-    let material_right = Arc::new(Metal::new(
-        &Color {
-            x: 0.8,
-            y: 0.6,
-            z: 0.2,
-        },
-        0.0,
-    ));
-    world.add(Arc::new(Sphere {
-        center: Point3 {
-            x: 0.0,
-            y: -100.5,
-            z: -1.0,
-        },
-        radius: 100.0,
-        mat_ptr: material_ground,
-    }));
-    world.add(Arc::new(Sphere {
-        center: Point3 {
-            x: 0.0,
-            y: 0.0,
-            z: -1.0,
-        },
-        radius: 0.5,
-        mat_ptr: material_center,
-    }));
-    world.add(Arc::new(Sphere {
-        center: Point3 {
-            x: -1.0,
-            y: 0.0,
-            z: -1.0,
-        },
-        radius: 0.5,
-        mat_ptr: material_left.clone(),
-    }));
-    world.add(Arc::new(Sphere {
-        center: Point3 {
-            x: -1.0,
-            y: 0.0,
-            z: -1.0,
-        },
-        radius: -0.4,
-        mat_ptr: material_left,
-    }));
-    world.add(Arc::new(Sphere {
-        center: Point3 {
-            x: 1.0,
-            y: 0.0,
-            z: -1.0,
-        },
-        radius: 0.5,
-        mat_ptr: material_right,
-    }));
+    let world = random_scene();
     // Camera
-    let lookfrom = Point3::new(3.0, 3.0, 2.0);
-    let lookat = Point3::new(0.0, 0.0, -1.0);
+    let lookfrom = Point3::new(13.0, 2.0, 3.0);
+    let lookat = Point3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = (lookfrom - lookat).length();
-    let aperture = 2.0;
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
     let cam = Camera::new(
         lookfrom,
         lookat,
@@ -125,7 +111,7 @@ fn main() {
             }
             write_color(&mut img, x, y, &pixel_color, samples_per_pixel);
         }
-        //bar.inc(1);
+        bar.inc(1);
     }
     // Save
     img.save("output/test.png").unwrap();

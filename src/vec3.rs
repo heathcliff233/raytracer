@@ -63,6 +63,14 @@ impl Vec3 {
     }
 }
 
+pub fn randomvec() -> Vec3 {
+    Vec3::new(
+        random_double(0.0, 1.0),
+        random_double(0.0, 1.0),
+        random_double(0.0, 1.0),
+    )
+}
+
 pub fn random_in_unit_sphere() -> Vec3 {
     loop {
         let p = Vec3 {

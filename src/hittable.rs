@@ -49,6 +49,16 @@ pub struct Sphere {
     pub mat_ptr: Arc<dyn Material>,
 }
 
+impl Sphere {
+    pub fn new(c: Point3, r: f64, m: Arc<dyn Material>) -> Self {
+        Self {
+            center: c,
+            radius: r,
+            mat_ptr: m,
+        }
+    }
+}
+
 impl HitTable for Sphere {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         let oc = r.orig - self.center;
