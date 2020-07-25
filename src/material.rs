@@ -1,10 +1,9 @@
 use crate::{
     hittable::HitRecord,
     ray::Ray,
-    rtweekend::fmin,
+    rtweekend::{fmin, random_double},
     vec3::{random_in_unit_sphere, random_unit_vector, reflect, refract, Color},
 };
-use std::cmp::min;
 
 pub trait Material {
     fn scatter(
@@ -104,6 +103,15 @@ impl Material for Dielectric {
             };
             return true;
         }
+        let reflect_prob = schlick(cos_theta, etai_over_etat);
+        if random_double(0.0, 1.0) < reflect_prob {
+            let reflected = reflect(&unit_dir, &rec.normal);
+            *scattered = Ray {
+                orig: rec.p,
+                dir: reflected,
+            };
+            return true;
+        }
         let refracted = refract(&unit_dir, &rec.normal, etai_over_etat);
         *scattered = Ray {
             orig: rec.p,
@@ -111,4 +119,10 @@ impl Material for Dielectric {
         };
         true
     }
+}
+
+pub fn schlick(cosine: f64, ref_idx: f64) -> f64 {
+    let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+    r0 = r0 * r0;
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }
