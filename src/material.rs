@@ -101,7 +101,7 @@ impl Material for Dielectric {
     ) -> bool {
         *attenuation = Color::ones();
         let mut etai_over_etat = 1.0 / self.ref_idx;
-        if rec.front_face == false {
+        if !rec.front_face {
             etai_over_etat = self.ref_idx;
         }
         let unit_dir = r_in.dir.unit();
