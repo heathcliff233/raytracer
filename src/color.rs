@@ -41,12 +41,12 @@ pub fn ray_color(r: &Ray, world: &dyn HitTable, depth: i64) -> Color {
 
 pub fn write_color(
     img: &mut RgbImage,
-    x: u32,
-    y: u32,
+    pixel_x: u32,
+    pixel_y: u32,
     pixel_color: &Color,
     samples_per_pixel: i64,
 ) {
-    let pixel = img.get_pixel_mut(x, y);
+    let pixel = img.get_pixel_mut(pixel_x, pixel_y);
     let scale = 1.0 / samples_per_pixel as f64;
     let r = (pixel_color.x * scale).sqrt();
     let g = (pixel_color.y * scale).sqrt();
