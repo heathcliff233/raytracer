@@ -4,7 +4,7 @@ use crate::{
     material::Material,
     vec3::{Point3, Vec3},
 };
-use std::sync::Arc;
+use std::{f64::consts::PI, sync::Arc};
 
 #[derive(Clone)]
 pub struct HitRecord {
@@ -12,6 +12,8 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub mat_ptr: Arc<dyn Material>,
     pub t: f64,
+    pub u: f64,
+    pub v: f64,
     pub front_face: bool,
 }
 
@@ -26,6 +28,8 @@ impl HitRecord {
             normal: Vec3::zero(),
             mat_ptr: m,
             t: 0.0,
+            u: 0.0,
+            v: 0.0,
             front_face: false,
         }
     }
@@ -59,6 +63,12 @@ impl Sphere {
             mat_ptr: m,
         }
     }
+    pub fn get_sphere_uv(p: &Vec3, u: &mut f64, v: &mut f64) {
+        let phi = p.z.atan2(p.x);
+        let theta = p.y.asin();
+        *u = 1.0 - (phi + PI) / (2.0 * PI);
+        *v = (theta + PI / 2.0) / PI;
+    }
 }
 
 impl HitTable for Sphere {
@@ -76,6 +86,11 @@ impl HitTable for Sphere {
                 rec.p = r.at(rec.t);
                 let outward_normal = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(r, &outward_normal);
+                Sphere::get_sphere_uv(
+                    &((rec.p - self.center) / self.radius),
+                    &mut rec.u,
+                    &mut rec.v,
+                );
                 rec.mat_ptr = self.mat_ptr.clone();
                 return true;
             }
@@ -85,6 +100,11 @@ impl HitTable for Sphere {
                 rec.p = r.at(rec.t);
                 let outward_normal = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(r, &outward_normal);
+                Sphere::get_sphere_uv(
+                    &((rec.p - self.center) / self.radius),
+                    &mut rec.u,
+                    &mut rec.v,
+                );
                 rec.mat_ptr = self.mat_ptr.clone();
                 return true;
             }

@@ -8,6 +8,7 @@ mod hittablelist;
 mod material;
 mod ray;
 mod rtweekend;
+mod texture;
 mod vec3;
 use bvh::BVHNode;
 use camera::Camera;
@@ -19,15 +20,19 @@ use indicatif::ProgressBar;
 use material::{Dielectric, Lambertian, Metal};
 use rtweekend::random_double;
 use std::sync::Arc;
+use texture::CheckerTexture;
 use vec3::{randomvec, Color, Point3, Vec3};
 
 pub fn random_scene() -> HitTableList {
     let mut world = HitTableList::new();
-    let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    let checker = Arc::new(CheckerTexture::new(
+        Color::new(0.2, 0.3, 0.1),
+        Color::new(0.9, 0.9, 0.9),
+    ));
     world.add(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
-        ground_material,
+        Arc::new(Lambertian { albedo: checker }),
     )));
     for a in -11..11 {
         for b in -11..11 {
@@ -78,9 +83,9 @@ pub fn random_scene() -> HitTableList {
 fn main() {
     // image
     let aspect_ratio = 3.0 / 2.0;
-    let image_width = 1200;
+    let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
-    let samples_per_pixel = 500;
+    let samples_per_pixel = 64;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
     let max_depth = 50;

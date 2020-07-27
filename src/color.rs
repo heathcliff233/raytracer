@@ -3,6 +3,7 @@ use crate::{
     material::Lambertian,
     ray::Ray,
     rtweekend::clamp,
+    texture::ConstTexture,
     vec3::{Color, Vec3},
 };
 use image::{Rgb, RgbImage};
@@ -10,7 +11,9 @@ use std::{f64::INFINITY, sync::Arc};
 
 pub fn ray_color(r: &Ray, world: &dyn HitTable, depth: i64) -> Color {
     let mut rec = HitRecord::new(Arc::new(Lambertian {
-        albedo: Color::zero(),
+        albedo: Arc::new(ConstTexture {
+            color_value: Color::zero(),
+        }),
     }));
     if depth <= 0 {
         return Color::zero();
