@@ -1,3 +1,5 @@
+mod aabb;
+mod bvh;
 #[allow(clippy::float_cmp)]
 mod camera;
 mod color;
@@ -7,6 +9,7 @@ mod material;
 mod ray;
 mod rtweekend;
 mod vec3;
+use bvh::BVHNode;
 use camera::Camera;
 use color::{ray_color, write_color};
 use hittable::Sphere;
@@ -75,14 +78,16 @@ pub fn random_scene() -> HitTableList {
 fn main() {
     // image
     let aspect_ratio = 3.0 / 2.0;
-    let image_width = 1200;
+    let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
     let samples_per_pixel = 500;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
     let max_depth = 50;
     // World
-    let world = random_scene();
+    let mut world = random_scene();
+    let length = world.objects.len();
+    let world = BVHNode::new(&mut world.objects, 0, length, 0.0, 0.1);
     // Camera
     let lookfrom = Point3::new(13.0, 2.0, 3.0);
     let lookat = Point3::new(0.0, 0.0, 0.0);

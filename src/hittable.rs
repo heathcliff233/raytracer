@@ -1,5 +1,6 @@
 use crate::ray::Ray;
 use crate::{
+    aabb::AABB,
     material::Material,
     vec3::{Point3, Vec3},
 };
@@ -40,6 +41,7 @@ impl HitRecord {
 
 pub trait HitTable {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
+    fn bounding_box(&self, t0: f64, t1: f64, output_box: &mut AABB) -> bool;
 }
 
 #[derive(Clone)]
@@ -88,5 +90,12 @@ impl HitTable for Sphere {
             }
         }
         false
+    }
+    fn bounding_box(&self, _t0: f64, _t1: f64, output_box: &mut AABB) -> bool {
+        *output_box = AABB::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
+        );
+        true
     }
 }

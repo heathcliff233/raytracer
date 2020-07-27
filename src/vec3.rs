@@ -1,7 +1,7 @@
 use crate::rtweekend::random_double;
 use std::{
     f64::consts::PI,
-    ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, Index, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -264,6 +264,18 @@ impl Neg for Vec3 {
             x: -self.x,
             y: -self.y,
             z: -self.z,
+        }
+    }
+}
+
+impl Index<usize> for Vec3 {
+    type Output = f64;
+    fn index(&self, i: usize) -> &f64 {
+        match i {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => &self.x,
         }
     }
 }

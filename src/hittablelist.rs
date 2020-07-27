@@ -1,6 +1,8 @@
 use crate::{
+    aabb::AABB,
     hittable::{HitRecord, HitTable},
     ray::Ray,
+    vec3::Point3,
 };
 use std::{sync::Arc, vec};
 
@@ -43,5 +45,24 @@ impl HitTable for HitTableList {
             }
         }
         hit_anything
+    }
+    fn bounding_box(&self, t0: f64, t1: f64, output_box: &mut AABB) -> bool {
+        if self.objects.is_empty() {
+            return false;
+        }
+        let mut tmp_box = AABB::new(Point3::zero(), Point3::zero());
+        let mut first_box = true;
+        for object in &self.objects {
+            if !object.bounding_box(t0, t1, &mut tmp_box) {
+                return false;
+            }
+            if first_box {
+                *output_box = tmp_box.clone();
+            } else {
+                *output_box = AABB::surrounding_box(output_box, &tmp_box);
+            }
+            first_box = false;
+        }
+        true
     }
 }
