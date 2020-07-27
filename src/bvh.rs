@@ -63,7 +63,7 @@ impl BVHNode {
         let mut box_left = AABB::new(Point3::zero(), Point3::zero());
         let mut box_right = AABB::new(Point3::zero(), Point3::zero());
         if !tmp.left.bounding_box(time0, time1, &mut box_left)
-            || !tmp.left.bounding_box(time0, time1, &mut box_right)
+            || !tmp.right.bounding_box(time0, time1, &mut box_right)
         {
             println!("No bounding box in bvh_node constructor.\n");
         }
