@@ -1,4 +1,5 @@
 mod aabb;
+mod aarect;
 mod bvh;
 #[allow(clippy::float_cmp)]
 mod camera;
@@ -10,6 +11,7 @@ mod ray;
 mod rtweekend;
 mod texture;
 mod vec3;
+use aarect::XYRect;
 use bvh::BVHNode;
 use camera::Camera;
 use color::{ray_color, write_color};
@@ -17,11 +19,34 @@ use hittable::Sphere;
 use hittablelist::HitTableList;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
-use material::{Dielectric, Lambertian, Metal};
+use material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use rtweekend::random_double;
 use std::sync::Arc;
 use texture::CheckerTexture;
 use vec3::{randomvec, Color, Point3, Vec3};
+
+pub fn simple_light() -> HitTableList {
+    let mut world = HitTableList::new();
+    let checker = Arc::new(CheckerTexture::new(
+        Color::new(0.2, 0.3, 0.1),
+        Color::new(0.9, 0.9, 0.9),
+    ));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian {
+            albedo: checker.clone(),
+        }),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 2.0, 0.0),
+        2.0,
+        Arc::new(Lambertian { albedo: checker }),
+    )));
+    let difflight = Arc::new(DiffuseLight::new(Color::new(4.0, 0.0, 4.0)));
+    world.add(Arc::new(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight)));
+    world
+}
 
 pub fn random_scene() -> HitTableList {
     let mut world = HitTableList::new();
@@ -59,19 +84,22 @@ pub fn random_scene() -> HitTableList {
             }
         }
     }
-    let material_1 = Arc::new(Dielectric::new(1.5));
+    // let material_1 = Arc::new(Dielectric::new(1.5));
+    let material_1 = Arc::new(DiffuseLight::new(Color::new(4.0, 0.0, 0.0)));
     world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
         material_1,
     )));
-    let material_2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    // let material_2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    let material_2 = Arc::new(DiffuseLight::new(Color::new(0.0, 4.0, 4.0)));
     world.add(Arc::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
         material_2,
     )));
-    let material_3 = Arc::new(Metal::new(&Color::new(0.7, 0.6, 0.5), 0.0));
+    // let material_3 = Arc::new(Metal::new(&Color::new(0.7, 0.6, 0.5), 0.0));
+    let material_3 = Arc::new(DiffuseLight::new(Color::new(0.0, 0.0, 4.0)));
     world.add(Arc::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
@@ -82,17 +110,19 @@ pub fn random_scene() -> HitTableList {
 
 fn main() {
     // image
-    let aspect_ratio = 3.0 / 2.0;
-    let image_width = 400;
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 800;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
-    let samples_per_pixel = 64;
+    let samples_per_pixel = 100;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
     let max_depth = 50;
     // World
+    // let mut world = random_scene();
     let mut world = random_scene();
     let length = world.objects.len();
     let world = BVHNode::new(&mut world.objects, 0, length, 0.0, 0.1);
+    let background = Color::new(0.0, 0.0, 0.0);
     // Camera
     let lookfrom = Point3::new(13.0, 2.0, 3.0);
     let lookat = Point3::new(0.0, 0.0, 0.0);
@@ -117,7 +147,7 @@ fn main() {
                 let v = ((image_height - y) as f64 + random_double(0.0, 1.0))
                     / (image_height - 1) as f64;
                 let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, max_depth);
+                pixel_color += ray_color(&r, &background, &world, max_depth);
             }
             write_color(&mut img, x, y, &pixel_color, samples_per_pixel);
         }

@@ -4,12 +4,12 @@ use crate::{
     ray::Ray,
     rtweekend::clamp,
     texture::ConstTexture,
-    vec3::{Color, Vec3},
+    vec3::{Color, Point3, Vec3},
 };
 use image::{Rgb, RgbImage};
 use std::{f64::INFINITY, sync::Arc};
 
-pub fn ray_color(r: &Ray, world: &dyn HitTable, depth: i64) -> Color {
+pub fn ray_color(r: &Ray, background: &Color, world: &dyn HitTable, depth: i64) -> Color {
     let mut rec = HitRecord::new(Arc::new(Lambertian {
         albedo: Arc::new(ConstTexture {
             color_value: Color::zero(),
@@ -18,28 +18,26 @@ pub fn ray_color(r: &Ray, world: &dyn HitTable, depth: i64) -> Color {
     if depth <= 0 {
         return Color::zero();
     }
-    if world.hit(r, 0.001, INFINITY, &mut rec) {
-        let mut scattered = Ray {
-            orig: Vec3::ones(),
-            dir: Vec3::ones(),
-        };
-        let mut attenuation = Color::zero();
-        if rec
-            .mat_ptr
-            .scatter(r, &rec, &mut attenuation, &mut scattered)
-        {
-            return Vec3::elemul(attenuation, ray_color(&scattered, world, depth - 1));
-        }
-        return Color::zero();
+    if !world.hit(r, 0.001, INFINITY, &mut rec) {
+        return *background;
     }
-    let unit_dir = r.dir.unit();
-    let t = (unit_dir.y + 1.0) * 0.5;
-    Color::ones() * (1.0 - t)
-        + Color {
-            x: 0.5,
-            y: 0.7,
-            z: 1.0,
-        } * t
+    let mut scattered = Ray {
+        orig: Point3::zero(),
+        dir: Vec3::zero(),
+    };
+    let mut attenuation = Color::zero();
+    let emitted = rec.mat_ptr.emitted(rec.u, rec.v, &rec.p);
+    if !rec
+        .mat_ptr
+        .scatter(r, &rec, &mut attenuation, &mut scattered)
+    {
+        return emitted;
+    }
+    emitted
+        + Vec3::elemul(
+            attenuation,
+            ray_color(&scattered, background, world, depth - 1),
+        )
 }
 
 pub fn write_color(

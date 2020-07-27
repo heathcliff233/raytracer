@@ -3,7 +3,7 @@ use crate::{
     ray::Ray,
     rtweekend::{fmin, random_double},
     texture::{ConstTexture, Texture},
-    vec3::{random_in_unit_sphere, random_unit_vector, reflect, refract, Color},
+    vec3::{random_in_unit_sphere, random_unit_vector, reflect, refract, Color, Point3},
 };
 use std::sync::Arc;
 
@@ -15,6 +15,7 @@ pub trait Material {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool;
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
 
 pub struct Lambertian {
@@ -44,6 +45,9 @@ impl Material for Lambertian {
         };
         *attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
         true
+    }
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::zero()
     }
 }
 
@@ -82,6 +86,9 @@ impl Material for Metal {
         };
         *attenuation = self.albedo;
         scattered.dir * rec.normal > 0.0
+    }
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::zero()
     }
 }
 
@@ -135,10 +142,40 @@ impl Material for Dielectric {
         };
         true
     }
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::zero()
+    }
 }
 
 pub fn schlick(cosine: f64, ref_idx: f64) -> f64 {
     let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
     r0 = r0 * r0;
     r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+}
+
+pub struct DiffuseLight {
+    pub emit: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(c: Color) -> Self {
+        Self {
+            emit: Arc::new(ConstTexture { color_value: c }),
+        }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(
+        &self,
+        _r_in: &Ray,
+        _rec: &HitRecord,
+        _attenuation: &mut Color,
+        _scattered: &mut Ray,
+    ) -> bool {
+        false
+    }
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        self.emit.value(u, v, p)
+    }
 }
