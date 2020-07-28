@@ -21,8 +21,9 @@ use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 use material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use rtweekend::random_double;
-use std::sync::Arc;
+use std::sync::{mpsc::channel, Arc};
 use texture::CheckerTexture;
+use threadpool::ThreadPool;
 use vec3::{randomvec, Color, Point3, Vec3};
 
 pub fn simple_light() -> HitTableList {
@@ -113,14 +114,25 @@ pub fn random_scene() -> HitTableList {
     world
 }
 
+pub fn is_ci() -> bool {
+    option_env!("CI").unwrap_or_default() == "true"
+}
+
 fn main() {
+    // get environment variable CI, which is true for GitHub Action
+    let is_ci = is_ci();
+    // jobs: split image into how many parts
+    // workers: maximum allowed concurrent running threads
+    let (n_jobs, n_workers): (usize, usize) = if is_ci { (32, 2) } else { (8, 2) };
+    println!(
+        "CI: {}, using {} jobs and {} workers",
+        is_ci, n_jobs, n_workers
+    );
     // image
     let aspect_ratio = 3.0 / 2.0;
-    let image_width = 3000;
+    let image_width = 300;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
     let samples_per_pixel = 400;
-    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
-    let bar = ProgressBar::new(image_width as u64);
     let max_depth = 50;
     // World
     // let mut world = random_scene();
@@ -143,7 +155,54 @@ fn main() {
         aperture,
         dist_to_focus,
     );
-    // Main Loop
+    // create a channel to send objects between threads
+    let (tx, rx) = channel();
+    let pool = ThreadPool::new(n_workers);
+    let bar = ProgressBar::new(image_width as u64);
+    for i in 0..n_jobs {
+        let tx = tx.clone();
+        let world_ptr = world.clone();
+        pool.execute(move || {
+            // here, we render some of the rows of image in one thread
+            let row_begin = image_height as usize * i / n_jobs;
+            let row_end = image_height as usize * (i + 1) / n_jobs;
+            let render_height = row_end - row_begin;
+            let mut img: RgbImage = ImageBuffer::new(image_width, render_height as u32);
+            for x in 0..image_width {
+                // img_y is the row in partial rendered image
+                // y is real position in final image
+                for (img_y, y) in (row_begin..row_end).enumerate() {
+                    let y = y as u32;
+                    let mut pixel_color = Color::zero();
+                    for _s in 0..samples_per_pixel {
+                        let u = (x as f64 + random_double(0.0, 1.0)) / (image_width - 1) as f64;
+                        let v = ((image_height - y) as f64 + random_double(0.0, 1.0))
+                            / (image_height - 1) as f64;
+                        let r = cam.get_ray(u, v);
+                        pixel_color += ray_color(&r, &background, &world_ptr, max_depth);
+                    }
+                    write_color(&mut img, x, img_y as u32, &pixel_color, samples_per_pixel);
+                }
+            }
+            // send row range and rendered image to main thread
+            tx.send((row_begin..row_end, img))
+                .expect("failed to send result");
+        });
+    }
+    let mut result: RgbImage = ImageBuffer::new(image_width, image_height);
+    for (rows, data) in rx.iter().take(n_jobs) {
+        // idx is the corrsponding row in partial-rendered image
+        for (idx, row) in rows.enumerate() {
+            for col in 0..image_width {
+                let row = row as u32;
+                let idx = idx as u32;
+                *result.get_pixel_mut(col, row) = *data.get_pixel(col, idx);
+            }
+        }
+        bar.inc(1);
+    }
+    bar.finish();
+    /* Main Loop without Multithreading
     for x in 0..image_width {
         for y in 0..image_height {
             let mut pixel_color = Color::zero();
@@ -157,8 +216,7 @@ fn main() {
             write_color(&mut img, x, y, &pixel_color, samples_per_pixel);
         }
         bar.inc(1);
-    }
+    } */
     // Save
-    img.save("output/test.png").unwrap();
-    bar.finish();
+    result.save("output/test.png").unwrap();
 }

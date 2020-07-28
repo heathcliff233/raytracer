@@ -4,7 +4,7 @@ use crate::{
     vec3::{random_in_unit_disk, Point3, Vec3},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Camera {
     origin: Point3,
     lower_left_corner: Point3,

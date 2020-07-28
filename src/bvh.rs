@@ -7,6 +7,7 @@ use crate::{
 };
 use std::{cmp::Ordering, sync::Arc};
 
+#[derive(Clone)]
 pub struct BVHNode {
     left: Arc<dyn HitTable>,
     right: Arc<dyn HitTable>,
