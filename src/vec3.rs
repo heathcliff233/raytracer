@@ -61,6 +61,13 @@ impl Vec3 {
             z: self.z / self.length(),
         }
     }
+
+    pub fn distance(&self, other: Self) -> f64 {
+        let x = self.x - other.x;
+        let y = self.y - other.y;
+        let z = self.z - other.z;
+        (x * x + y * y + z * z).sqrt()
+    }
 }
 
 pub fn randomvec() -> Vec3 {

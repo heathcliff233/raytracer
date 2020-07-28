@@ -48,6 +48,16 @@ pub fn simple_light() -> HitTableList {
     world
 }
 
+pub fn check(world: &HitTableList, center: &Point3) -> bool {
+    for object in &world.objects {
+        let dis = object.distance(center);
+        if dis < center.y {
+            return false;
+        }
+    }
+    true
+}
+
 pub fn random_scene() -> HitTableList {
     let mut world = HitTableList::new();
     let checker = Arc::new(CheckerTexture::new(
@@ -59,61 +69,56 @@ pub fn random_scene() -> HitTableList {
         1000.0,
         Arc::new(Lambertian { albedo: checker }),
     )));
-    for a in -11..11 {
-        for b in -11..11 {
+    let material_1 = Arc::new(CheckerTexture::new(
+        Color::new(254.0, 67.0, 101.0) / 255.0 * 1.7,
+        Color::new(249.0, 205.0, 173.0) / 255.0 * 1.7,
+    ));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0),
+        1.0,
+        Arc::new(DiffuseLight { emit: material_1 }),
+    )));
+    for a in -15..15 {
+        for b in -15..15 {
             let choose_mat = random_double(0.0, 1.0);
             let center = Point3::new(
                 a as f64 + 0.9 * random_double(0.0, 1.0),
-                0.2,
+                random_double(0.05, 0.5),
                 b as f64 + 0.9 * random_double(0.0, 1.0),
             );
+            if !check(&world, &center) {
+                continue;
+            }
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.8 {
+                if choose_mat < 0.4 {
+                    let difflight = randomvec().elemul(randomvec()) * 1.7;
+                    let sphere_material = Arc::new(DiffuseLight::new(difflight));
+                    world.add(Arc::new(Sphere::new(center, center.y, sphere_material)));
+                } else if choose_mat < 0.6 {
                     let albedo = randomvec().elemul(randomvec());
                     let sphere_material = Arc::new(Lambertian::new(albedo));
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
-                } else if choose_mat < 0.95 {
+                    world.add(Arc::new(Sphere::new(center, center.y, sphere_material)));
+                } else if choose_mat < 0.8 {
                     let albedo = randomvec().elemul(randomvec());
                     let fuzz = random_double(0.0, 0.5);
                     let sphere_material = Arc::new(Metal::new(&albedo, fuzz));
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    world.add(Arc::new(Sphere::new(center, center.y, sphere_material)));
                 } else {
                     let sphere_material = Arc::new(Dielectric::new(1.5));
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    world.add(Arc::new(Sphere::new(center, center.y, sphere_material)));
                 }
             }
         }
     }
-    // let material_1 = Arc::new(Dielectric::new(1.5));
-    let material_1 = Arc::new(DiffuseLight::new(Color::new(4.0, 0.0, 0.0)));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(0.0, 1.0, 0.0),
-        1.0,
-        material_1,
-    )));
-    // let material_2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    let material_2 = Arc::new(DiffuseLight::new(Color::new(0.0, 4.0, 4.0)));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(-4.0, 1.0, 0.0),
-        1.0,
-        material_2,
-    )));
-    // let material_3 = Arc::new(Metal::new(&Color::new(0.7, 0.6, 0.5), 0.0));
-    let material_3 = Arc::new(DiffuseLight::new(Color::new(0.0, 0.0, 4.0)));
-    world.add(Arc::new(Sphere::new(
-        Point3::new(4.0, 1.0, 0.0),
-        1.0,
-        material_3,
-    )));
     world
 }
 
 fn main() {
     // image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 800;
+    let aspect_ratio = 3.0 / 2.0;
+    let image_width = 3000;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 400;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
     let max_depth = 50;
@@ -124,16 +129,16 @@ fn main() {
     let world = BVHNode::new(&mut world.objects, 0, length, 0.0, 0.1);
     let background = Color::new(0.0, 0.0, 0.0);
     // Camera
-    let lookfrom = Point3::new(13.0, 2.0, 3.0);
+    let lookfrom = Point3::new(13.0, 5.0, 10.0);
     let lookat = Point3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = 10.0;
-    let aperture = 0.1;
+    let dist_to_focus = 15.0;
+    let aperture = 0.2;
     let cam = Camera::new(
         lookfrom,
         lookat,
         vup,
-        20.0,
+        45.0,
         aspect_ratio,
         aperture,
         dist_to_focus,

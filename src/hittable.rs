@@ -46,6 +46,7 @@ impl HitRecord {
 pub trait HitTable {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
     fn bounding_box(&self, t0: f64, t1: f64, output_box: &mut AABB) -> bool;
+    fn distance(&self, other_center: &Point3) -> f64;
 }
 
 #[derive(Clone)]
@@ -117,5 +118,8 @@ impl HitTable for Sphere {
             self.center + Vec3::new(self.radius, self.radius, self.radius),
         );
         true
+    }
+    fn distance(&self, other_center: &Point3) -> f64 {
+        other_center.distance(self.center) - self.radius
     }
 }

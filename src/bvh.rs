@@ -129,4 +129,7 @@ impl HitTable for BVHNode {
         *output_box = self.bvhbox.clone();
         true
     }
+    fn distance(&self, _other_center: &Point3) -> f64 {
+        0.0
+    }
 }

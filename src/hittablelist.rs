@@ -65,4 +65,7 @@ impl HitTable for HitTableList {
         }
         true
     }
+    fn distance(&self, _other_center: &Point3) -> f64 {
+        0.0
+    }
 }
