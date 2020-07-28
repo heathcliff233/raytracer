@@ -123,14 +123,14 @@ fn main() {
     let is_ci = is_ci();
     // jobs: split image into how many parts
     // workers: maximum allowed concurrent running threads
-    let (n_jobs, n_workers): (usize, usize) = if is_ci { (32, 2) } else { (8, 2) };
+    let (n_jobs, n_workers): (usize, usize) = if is_ci { (32, 2) } else { (16, 4) };
     println!(
         "CI: {}, using {} jobs and {} workers",
         is_ci, n_jobs, n_workers
     );
     // image
     let aspect_ratio = 3.0 / 2.0;
-    let image_width = 300;
+    let image_width = 3000;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
     let samples_per_pixel = 400;
     let max_depth = 50;
@@ -158,7 +158,7 @@ fn main() {
     // create a channel to send objects between threads
     let (tx, rx) = channel();
     let pool = ThreadPool::new(n_workers);
-    let bar = ProgressBar::new(image_width as u64);
+    let bar = ProgressBar::new(n_jobs as u64);
     for i in 0..n_jobs {
         let tx = tx.clone();
         let world_ptr = world.clone();
