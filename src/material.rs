@@ -147,6 +147,65 @@ impl Material for Dielectric {
     }
 }
 
+pub struct FrostedGlass {
+    pub ref_idx: f64,
+    pub fuzz: f64,
+}
+
+impl FrostedGlass {
+    pub fn new(r: f64, f: f64) -> Self {
+        Self {
+            ref_idx: r,
+            fuzz: f,
+        }
+    }
+}
+
+impl Material for FrostedGlass {
+    fn scatter(
+        &self,
+        r_in: &Ray,
+        rec: &HitRecord,
+        attenuation: &mut Color,
+        scattered: &mut Ray,
+    ) -> bool {
+        *attenuation = Color::ones();
+        let mut etai_over_etat = 1.0 / self.ref_idx;
+        if !rec.front_face {
+            etai_over_etat = self.ref_idx;
+        }
+        let unit_dir = r_in.dir.unit();
+        let cos_theta = fmin(1.0, -unit_dir * rec.normal);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        if etai_over_etat * sin_theta > 1.0 {
+            let reflected = reflect(&unit_dir, &rec.normal);
+            *scattered = Ray {
+                orig: rec.p,
+                dir: reflected,
+            };
+            return true;
+        }
+        let reflect_prob = schlick(cos_theta, etai_over_etat);
+        if random_double(0.0, 1.0) < reflect_prob {
+            let reflected = reflect(&unit_dir, &rec.normal);
+            *scattered = Ray {
+                orig: rec.p,
+                dir: reflected,
+            };
+            return true;
+        }
+        let refracted = refract(&unit_dir, &rec.normal, etai_over_etat);
+        *scattered = Ray {
+            orig: rec.p,
+            dir: refracted + random_in_unit_sphere() * self.fuzz,
+        };
+        true
+    }
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::zero()
+    }
+}
+
 pub fn schlick(cosine: f64, ref_idx: f64) -> f64 {
     let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
     r0 = r0 * r0;

@@ -17,12 +17,12 @@ use camera::Camera;
 use color::{ray_color, write_color};
 use hittable::Sphere;
 use hittablelist::HitTableList;
-use image::{ImageBuffer, RgbImage};
+use image::{GenericImageView, ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
-use material::{Dielectric, DiffuseLight, Lambertian, Metal};
+use material::{Dielectric, DiffuseLight, FrostedGlass, Lambertian, Metal};
 use rtweekend::random_double;
 use std::sync::{mpsc::channel, Arc};
-use texture::CheckerTexture;
+use texture::{CheckerTexture, ConstTexture};
 use threadpool::ThreadPool;
 use vec3::{randomvec, Color, Point3, Vec3};
 
@@ -59,6 +59,75 @@ pub fn check(world: &HitTableList, center: &Point3) -> bool {
     true
 }
 
+pub fn read_image() -> HitTableList {
+    let mut world = HitTableList::new();
+    let image1 = image::open("src/1.png").unwrap();
+    for a in 0..image1.width() {
+        for b in 0..image1.height() {
+            let pixel_color = image1.get_pixel(a, b);
+            if pixel_color != image::Rgba([255_u8, 255_u8, 255_u8, 255]) {
+                let albedo = Vec3::new(11.0, 23.0, 70.0) / 255.0;
+                let sphere_material = Arc::new(Lambertian::new(albedo));
+                world.add(Arc::new(Sphere::new(
+                    Vec3::new(a as f64 / 20.0, (image1.height() - b) as f64 / 10.0, 0.0),
+                    0.05,
+                    sphere_material,
+                )));
+            }
+        }
+    }
+    let image2 = image::open("src/2.png").unwrap();
+    for a in 0..image2.width() {
+        for b in 0..image2.height() {
+            let pixel_color = image2.get_pixel(a, b);
+            if pixel_color != image::Rgba([255_u8, 255_u8, 255_u8, 255]) {
+                let albedo = Vec3::new(11.0, 23.0, 70.0) / 255.0;
+                let sphere_material = Arc::new(Lambertian::new(albedo));
+                world.add(Arc::new(Sphere::new(
+                    Vec3::new(
+                        a as f64 / 20.0,
+                        (image2.height() - b) as f64 / 10.0 + 2.0,
+                        -10.0,
+                    ),
+                    0.05,
+                    sphere_material,
+                )));
+            }
+        }
+    }
+    let albedo = randomvec().elemul(randomvec());
+    // let fuzz = random_double(0.0, 0.5);
+    let fuzz = 0.0;
+    let sphere_material1 = Arc::new(Metal::new(&albedo, fuzz));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(-3.5, 3.0, 0.0),
+        3.0,
+        sphere_material1,
+    )));
+    let sphere_material2 = Arc::new(Dielectric::new(1.5));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(-3.5, 5.0, -10.0),
+        3.0,
+        sphere_material2,
+    )));
+    let sphere_material3 = Arc::new(FrostedGlass::new(1.5, 0.3));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, -15.0, 0.0),
+        15.0,
+        Arc::new(DiffuseLight {
+            emit: Arc::new(ConstTexture {
+                color_value: Color::ones() * 3.0,
+            }),
+        }),
+    )));
+    world.add(Arc::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        sphere_material3,
+    )));
+    world
+}
+
 pub fn random_scene() -> HitTableList {
     let mut world = HitTableList::new();
     let checker = Arc::new(CheckerTexture::new(
@@ -91,10 +160,20 @@ pub fn random_scene() -> HitTableList {
                 continue;
             }
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.4 {
-                    let difflight = randomvec().elemul(randomvec()) * 1.7;
-                    let sphere_material = Arc::new(DiffuseLight::new(difflight));
-                    world.add(Arc::new(Sphere::new(center, center.y, sphere_material)));
+                if choose_mat < 0.2 {
+                    // let difflight = randomvec().elemul(randomvec()) * 2.0;
+                    // let sphere_material = Arc::new(DiffuseLight::new(difflight));
+                    // world.add(Arc::new(Sphere::new(center, center.y, sphere_material)));
+                } else if choose_mat < 0.5 {
+                    let sphere_material1 = Arc::new(FrostedGlass::new(1.5, choose_mat));
+                    world.add(Arc::new(Sphere::new(center, center.y, sphere_material1)));
+                    let difflight = randomvec().elemul(randomvec()) * 2.0;
+                    let sphere_material2 = Arc::new(DiffuseLight::new(difflight));
+                    world.add(Arc::new(Sphere::new(
+                        center,
+                        center.y * 0.5,
+                        sphere_material2,
+                    )));
                 } else if choose_mat < 0.6 {
                     let albedo = randomvec().elemul(randomvec());
                     let sphere_material = Arc::new(Lambertian::new(albedo));
@@ -132,25 +211,25 @@ fn main() {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 1600;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 200;
     let max_depth = 50;
     // World
     // let mut world = random_scene();
-    let mut world = random_scene();
+    let mut world = read_image();
     let length = world.objects.len();
     let world = BVHNode::new(&mut world.objects, 0, length, 0.0, 0.1);
     let background = Color::new(0.0, 0.0, 0.0);
     // Camera
-    let lookfrom = Point3::new(13.0, 5.0, 10.0);
-    let lookat = Point3::new(0.0, 0.0, 0.0);
+    let lookfrom = Point3::new(10.0, 10.0, 16.0);
+    let lookat = Point3::new(0.0, 4.0, -3.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 15.0;
-    let aperture = 0.2;
+    let aperture = 0.0;
     let cam = Camera::new(
         lookfrom,
         lookat,
         vup,
-        45.0,
+        60.0,
         aspect_ratio,
         aperture,
         dist_to_focus,

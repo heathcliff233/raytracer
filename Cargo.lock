@@ -525,6 +525,7 @@ dependencies = [
  "imageproc",
  "indicatif",
  "rand",
+ "rusttype",
  "threadpool",
 ]
 
